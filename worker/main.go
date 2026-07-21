@@ -15,7 +15,7 @@ func updateBrightness(e updateBrightnessEvent) {
 	fmt.Println(time.Now(), "- Updating bulb", e.bulbNo, "to brightness", e.brightness)
 }
 
-func colorControl(q []updateBrightnessEvent) {
+func processQueue(q []updateBrightnessEvent) {
 	for ; len(q) > 0; {
 		e := q[0]
 
@@ -33,29 +33,28 @@ func colorControl(q []updateBrightnessEvent) {
 }
 
 func main() {
-	// colorControl()
 	q := []updateBrightnessEvent {
 		updateBrightnessEvent {
-			timestamp: time.Now().Add(1 * time.Second),
+			timestamp: time.Now().Add(300 * time.Millisecond),
 			bulbNo: 1,
 			brightness: 1,
 		},
 		updateBrightnessEvent {
-			timestamp: time.Now().Add(2 * time.Second),
+			timestamp: time.Now().Add(500 * time.Millisecond),
 			bulbNo: 1,
 			brightness: 0.5,
 		},
 		updateBrightnessEvent {
-			timestamp: time.Now().Add(3 * time.Second),
+			timestamp: time.Now().Add(650 * time.Millisecond),
 			bulbNo: 1,
 			brightness: 0,
 		},
 		updateBrightnessEvent {
-			timestamp: time.Now().Add(4 * time.Second),
+			timestamp: time.Now().Add(720 * time.Millisecond),
 			bulbNo: 1,
 			brightness: 1,
 		},
 	}
 
-	colorControl(q)
+	processQueue(q)
 }
