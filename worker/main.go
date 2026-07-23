@@ -30,6 +30,7 @@ func processQueue(q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
 		updateBrightness(e)
 		q = q[1:]
 
+		// Non-blocking check on if new updates are in the channel
 		select {
 		case new := <-ch:
 			// TODO: Leaves open the possibility
@@ -66,7 +67,7 @@ func main() {
 		},
 	}
 
-	ch := make(chan UpdateBrightnessEvent)
+	ch := make(chan UpdateBrightnessEvent, 100)
 
 	wg.Go(func() {
 		processQueue(q, ch)
@@ -76,6 +77,16 @@ func main() {
 		timestamp:  time.Now().Add(800 * time.Millisecond),
 		bulbNo:     1,
 		brightness: 0.6,
+	}
+	ch <- UpdateBrightnessEvent{
+		timestamp:  time.Now().Add(900 * time.Millisecond),
+		bulbNo:     1,
+		brightness: 0.8,
+	}
+	ch <- UpdateBrightnessEvent{
+		timestamp:  time.Now().Add(1000 * time.Millisecond),
+		bulbNo:     1,
+		brightness: 1.0,
 	}
 
 	wg.Wait()
