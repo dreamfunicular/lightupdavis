@@ -2,59 +2,81 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
-type updateBrightnessEvent struct {
-	timestamp time.Time
-	bulbNo int
+type UpdateBrightnessEvent struct {
+	timestamp  time.Time
+	bulbNo     int
 	brightness float32
 }
 
-func updateBrightness(e updateBrightnessEvent) {
+func updateBrightness(e UpdateBrightnessEvent) {
 	fmt.Println(time.Now(), "- Updating bulb", e.bulbNo, "to brightness", e.brightness)
 }
 
-func processQueue(q []updateBrightnessEvent) {
-	for ; len(q) > 0; {
+func processQueue(q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
+	for len(q) > 0 {
 		e := q[0]
 
-		if (e.timestamp.Compare(time.Now()) == -1) {
+		if e.timestamp.Compare(time.Now()) == -1 {
 			q = q[1:]
 			continue
 		}
 
-		diff := e.timestamp.Sub(time.Now())
-		
-		time.Sleep(diff)
+		time.Sleep(time.Until(e.timestamp))
+		// TODO: Leaves the possibility of a new, more urgent, instruction arriving while the current upcoming instruction is waiting.
 		updateBrightness(e)
 		q = q[1:]
+
+		select {
+		case new := <-ch:
+			// TODO: Leaves open the possibility
+			q = append(q, new)
+		default:
+			continue
+		}
 	}
 }
 
 func main() {
-	q := []updateBrightnessEvent {
-		updateBrightnessEvent {
-			timestamp: time.Now().Add(300 * time.Millisecond),
-			bulbNo: 1,
+	var wg sync.WaitGroup
+
+	q := []UpdateBrightnessEvent{
+		{
+			timestamp:  time.Now().Add(300 * time.Millisecond),
+			bulbNo:     1,
 			brightness: 1,
 		},
-		updateBrightnessEvent {
-			timestamp: time.Now().Add(500 * time.Millisecond),
-			bulbNo: 1,
+		{
+			timestamp:  time.Now().Add(500 * time.Millisecond),
+			bulbNo:     1,
 			brightness: 0.5,
 		},
-		updateBrightnessEvent {
-			timestamp: time.Now().Add(650 * time.Millisecond),
-			bulbNo: 1,
+		{
+			timestamp:  time.Now().Add(650 * time.Millisecond),
+			bulbNo:     1,
 			brightness: 0,
 		},
-		updateBrightnessEvent {
-			timestamp: time.Now().Add(720 * time.Millisecond),
-			bulbNo: 1,
+		{
+			timestamp:  time.Now().Add(720 * time.Millisecond),
+			bulbNo:     1,
 			brightness: 1,
 		},
 	}
 
-	processQueue(q)
+	ch := make(chan UpdateBrightnessEvent)
+
+	wg.Go(func() {
+		processQueue(q, ch)
+	})
+
+	ch <- UpdateBrightnessEvent{
+		timestamp:  time.Now().Add(800 * time.Millisecond),
+		bulbNo:     1,
+		brightness: 0.6,
+	}
+
+	wg.Wait()
 }
