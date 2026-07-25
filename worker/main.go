@@ -6,17 +6,19 @@ import (
 	"time"
 )
 
+type UpdateBrightnessEventHandler func(UpdateBrightnessEvent)
+
 type UpdateBrightnessEvent struct {
 	timestamp  time.Time
 	bulbNo     int
 	brightness float32
 }
 
-func updateBrightness(e UpdateBrightnessEvent) {
+func handleUpdateBrightnessEvent(e UpdateBrightnessEvent) {
 	fmt.Println(time.Now(), "- Updating bulb", e.bulbNo, "to brightness", e.brightness)
 }
 
-func processQueue(q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
+func processQueue(handler UpdateBrightnessEventHandler, q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
 	for len(q) > 0 {
 		e := q[0]
 
@@ -27,7 +29,7 @@ func processQueue(q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
 
 		time.Sleep(time.Until(e.timestamp))
 		// TODO: Leaves the possibility of a new, more urgent, instruction arriving while the current upcoming instruction is waiting.
-		updateBrightness(e)
+		handler(e)
 		q = q[1:]
 
 		// Non-blocking poll of the channel
@@ -78,7 +80,7 @@ func main() {
 	ch := make(chan UpdateBrightnessEvent, 100)
 
 	wg.Go(func() {
-		processQueue(q, ch)
+		processQueue(handleUpdateBrightnessEvent, q, ch)
 	})
 
 	ch <- UpdateBrightnessEvent{
@@ -86,16 +88,16 @@ func main() {
 		bulbNo:     1,
 		brightness: 0.5,
 	}
-	// ch <- UpdateBrightnessEvent{
-	// 	timestamp:  time.Now().Add(900 * time.Millisecond),
-	// 	bulbNo:     1,
-	// 	brightness: 0.6,
-	// }
-	// ch <- UpdateBrightnessEvent{
-	// 	timestamp:  time.Now().Add(1000 * time.Millisecond),
-	// 	bulbNo:     1,
-	// 	brightness: 0.7,
-	// }
+	ch <- UpdateBrightnessEvent{
+		timestamp:  time.Now().Add(900 * time.Millisecond),
+		bulbNo:     1,
+		brightness: 0.6,
+	}
+	ch <- UpdateBrightnessEvent{
+		timestamp:  time.Now().Add(1000 * time.Millisecond),
+		bulbNo:     1,
+		brightness: 0.7,
+	}
 
 	close(ch)
 	wg.Wait()
