@@ -30,11 +30,19 @@ func processQueue(q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
 		updateBrightness(e)
 		q = q[1:]
 
-		// Non-blocking check on if new updates are in the channel
+		// Non-blocking poll of the channel
 		select {
 		case new := <-ch:
-			// TODO: Leaves open the possibility
+			// Catches all buffer-created, late, or bugged updates.
+			if new.timestamp.Before(time.Now()) {
+				continue
+			}
+
+			// TODO: Leaves the possibility of new, more urgent, instructions being behind other ones in the queue. Needs to iterate through all additons.
 			q = append(q, new)
+			for each := range ch {
+				q = append(q, each)
+			}
 		default:
 			continue
 		}
@@ -48,22 +56,22 @@ func main() {
 		{
 			timestamp:  time.Now().Add(300 * time.Millisecond),
 			bulbNo:     1,
-			brightness: 1,
+			brightness: .1,
 		},
 		{
 			timestamp:  time.Now().Add(500 * time.Millisecond),
 			bulbNo:     1,
-			brightness: 0.5,
+			brightness: 0.2,
 		},
 		{
 			timestamp:  time.Now().Add(650 * time.Millisecond),
 			bulbNo:     1,
-			brightness: 0,
+			brightness: 0.3,
 		},
 		{
 			timestamp:  time.Now().Add(720 * time.Millisecond),
 			bulbNo:     1,
-			brightness: 1,
+			brightness: 0.4,
 		},
 	}
 
@@ -76,18 +84,19 @@ func main() {
 	ch <- UpdateBrightnessEvent{
 		timestamp:  time.Now().Add(800 * time.Millisecond),
 		bulbNo:     1,
-		brightness: 0.6,
+		brightness: 0.5,
 	}
-	ch <- UpdateBrightnessEvent{
-		timestamp:  time.Now().Add(900 * time.Millisecond),
-		bulbNo:     1,
-		brightness: 0.8,
-	}
-	ch <- UpdateBrightnessEvent{
-		timestamp:  time.Now().Add(1000 * time.Millisecond),
-		bulbNo:     1,
-		brightness: 1.0,
-	}
+	// ch <- UpdateBrightnessEvent{
+	// 	timestamp:  time.Now().Add(900 * time.Millisecond),
+	// 	bulbNo:     1,
+	// 	brightness: 0.6,
+	// }
+	// ch <- UpdateBrightnessEvent{
+	// 	timestamp:  time.Now().Add(1000 * time.Millisecond),
+	// 	bulbNo:     1,
+	// 	brightness: 0.7,
+	// }
 
+	close(ch)
 	wg.Wait()
 }
