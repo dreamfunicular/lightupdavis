@@ -72,3 +72,27 @@ func TestTwoEntryQueue(t *testing.T) {
 		t.Error("Contents of expected and actual calls to handler differed.")
 	}
 }
+
+func TestZeroEntryQueue(t *testing.T) {
+	expectedOrder := []UpdateBrightnessEvent{}
+
+	var actualOrder []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
+
+	mockHandler := func(e UpdateBrightnessEvent) {
+		actualOrder = append(actualOrder, e)
+	}
+
+	q := []UpdateBrightnessEvent{}
+
+	ch := make(chan UpdateBrightnessEvent, 100)
+
+	processQueue(mockHandler, q, ch)
+
+	if len(expectedOrder) != len(actualOrder) {
+		t.Errorf("Expected %d calls to handler; got %d.\n", len(expectedOrder), len(actualOrder))
+	}
+
+	if !reflect.DeepEqual(expectedOrder, actualOrder) {
+		t.Error("Contents of expected and actual calls to handler differed.")
+	}
+}
