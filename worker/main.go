@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"sync"
 	"time"
 )
 
@@ -49,56 +48,4 @@ func processQueue(handler UpdateBrightnessEventHandler, q []UpdateBrightnessEven
 			continue
 		}
 	}
-}
-
-func main() {
-	var wg sync.WaitGroup
-
-	q := []UpdateBrightnessEvent{
-		{
-			timestamp:  time.Now().Add(300 * time.Millisecond),
-			bulbNo:     1,
-			brightness: .1,
-		},
-		{
-			timestamp:  time.Now().Add(500 * time.Millisecond),
-			bulbNo:     1,
-			brightness: 0.2,
-		},
-		{
-			timestamp:  time.Now().Add(650 * time.Millisecond),
-			bulbNo:     1,
-			brightness: 0.3,
-		},
-		{
-			timestamp:  time.Now().Add(720 * time.Millisecond),
-			bulbNo:     1,
-			brightness: 0.4,
-		},
-	}
-
-	ch := make(chan UpdateBrightnessEvent, 100)
-
-	wg.Go(func() {
-		processQueue(handleUpdateBrightnessEvent, q, ch)
-	})
-
-	ch <- UpdateBrightnessEvent{
-		timestamp:  time.Now().Add(800 * time.Millisecond),
-		bulbNo:     1,
-		brightness: 0.5,
-	}
-	ch <- UpdateBrightnessEvent{
-		timestamp:  time.Now().Add(900 * time.Millisecond),
-		bulbNo:     1,
-		brightness: 0.6,
-	}
-	ch <- UpdateBrightnessEvent{
-		timestamp:  time.Now().Add(1000 * time.Millisecond),
-		bulbNo:     1,
-		brightness: 0.7,
-	}
-
-	close(ch)
-	wg.Wait()
 }

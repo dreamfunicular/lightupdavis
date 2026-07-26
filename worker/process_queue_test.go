@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 )
@@ -87,6 +88,78 @@ func TestZeroEntryQueue(t *testing.T) {
 	ch := make(chan UpdateBrightnessEvent, 100)
 
 	processQueue(mockHandler, q, ch)
+
+	if len(expectedOrder) != len(actualOrder) {
+		t.Errorf("Expected %d calls to handler; got %d.\n", len(expectedOrder), len(actualOrder))
+	}
+
+	if !reflect.DeepEqual(expectedOrder, actualOrder) {
+		t.Error("Contents of expected and actual calls to handler differed.")
+	}
+}
+
+func TestTwoEntryQueueWithSustainingChannels(t *testing.T) {
+	curr := time.Now()
+	expectedOrder := []UpdateBrightnessEvent{
+		{
+			timestamp:  curr.Add(300 * time.Millisecond),
+			bulbNo:     1,
+			brightness: .3,
+		},
+		{
+			timestamp:  curr.Add(400 * time.Millisecond),
+			bulbNo:     1,
+			brightness: .4,
+		},
+		{
+			timestamp:  curr.Add(500 * time.Millisecond),
+			bulbNo:     1,
+			brightness: 0.5,
+		},
+		{
+			timestamp:  curr.Add(600 * time.Millisecond),
+			bulbNo:     1,
+			brightness: 0.6,
+		},
+	}
+
+	var actualOrder []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
+
+	mockHandler := func(e UpdateBrightnessEvent) {
+		actualOrder = append(actualOrder, e)
+	}
+
+	q := []UpdateBrightnessEvent{
+		{
+			timestamp:  curr.Add(300 * time.Millisecond),
+			bulbNo:     1,
+			brightness: .3,
+		},
+		{
+			timestamp:  curr.Add(400 * time.Millisecond),
+			bulbNo:     1,
+			brightness: .4,
+		},
+	}
+
+	var wg sync.WaitGroup
+	ch := make(chan UpdateBrightnessEvent, 100)
+
+	wg.Go(func() { processQueue(mockHandler, q, ch) })
+
+	ch <- UpdateBrightnessEvent{
+		timestamp:  curr.Add(500 * time.Millisecond),
+		bulbNo:     1,
+		brightness: 0.5,
+	}
+	ch <- UpdateBrightnessEvent{
+		timestamp:  curr.Add(600 * time.Millisecond),
+		bulbNo:     1,
+		brightness: 0.6,
+	}
+
+	close(ch)
+	wg.Wait()
 
 	if len(expectedOrder) != len(actualOrder) {
 		t.Errorf("Expected %d calls to handler; got %d.\n", len(expectedOrder), len(actualOrder))
