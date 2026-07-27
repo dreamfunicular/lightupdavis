@@ -62,43 +62,28 @@ func TestGenerateQueue(t *testing.T) {
 
 	actual := generateQueue(curr, 1, 3)
 
-	if len(expected) != len(actual) {
-		t.Errorf("Expected %d calls to handler; got %d.\n", len(expected), len(actual))
-	}
-
-	for i := range len(expected) {
-		if expected[i].timestamp != actual[i].timestamp {
-			t.Errorf("Timestamp mismatch")
-		}
-
-		if expected[i].brightness != actual[i].brightness {
-			t.Errorf("brightness mismatch")
-		}
-
-		if expected[i].bulbNo != actual[i].bulbNo {
-			t.Errorf("bulbNo mismatch")
-		}
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf("Actual and expected calls do not match!")
 	}
 }
 
 func TestSingleEntryQueue(t *testing.T) {
-	q := []UpdateBrightnessEvent{
-		{
-			timestamp:  time.Now().Add(300 * time.Millisecond),
-			bulbNo:     1,
-			brightness: .1,
-		},
-	}
+	curr := time.Now()
+	q := generateQueue(curr, 1, 1)
+	expected := generateQueue(curr, 1, 1)
+	actual := make([]UpdateBrightnessEvent, 0)
 
 	mockHandler := func(e UpdateBrightnessEvent) {
-		if e != q[0] {
-			t.Error("Actual call to handler did not match expectation")
-		}
+		actual = append(actual, e)
 	}
 
 	ch := make(chan UpdateBrightnessEvent, 100)
 
 	processQueue(mockHandler, q, ch)
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf("Actual and expected calls do not match!")
+	}
 }
 
 func TestTwoEntryQueue(t *testing.T) {
