@@ -79,7 +79,11 @@ func TestSingleEntryQueue(t *testing.T) {
 	q := generateQueue(curr, 1, 1)
 	ch := make(chan UpdateBrightnessEvent, 100)
 
-	processQueue(mockHandler, q, ch)
+	var wg sync.WaitGroup
+	wg.Go(func() { processQueue(mockHandler, q, ch) })
+
+	close(ch)
+	wg.Wait()
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
@@ -98,7 +102,11 @@ func TestTwoEntryQueue(t *testing.T) {
 	q := generateQueue(curr, 1, 2)
 	ch := make(chan UpdateBrightnessEvent, 100)
 
-	processQueue(mockHandler, q, ch)
+	var wg sync.WaitGroup
+	wg.Go(func() { processQueue(mockHandler, q, ch) })
+
+	close(ch)
+	wg.Wait()
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
@@ -143,6 +151,36 @@ func TestTwoEntryQueueWithSustainingChannels(t *testing.T) {
 
 	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(3)*time.Millisecond), 3)
 	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(4)*time.Millisecond), 4)
+
+	close(ch)
+	wg.Wait()
+
+	if !reflect.DeepEqual(expected, actualOrder) {
+		t.Error("Contents of expected and actual calls to handler differed.")
+	}
+}
+
+func TestTwoEntryQueueWithDelayedChannels(t *testing.T) {
+	curr := time.Now()
+	expected := generateQueue(curr, 1, 2)
+	expected = append(expected, generateQueue(curr, 1005, 2)...)
+
+	var actualOrder []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
+
+	mockHandler := func(e UpdateBrightnessEvent) {
+		actualOrder = append(actualOrder, e)
+	}
+
+	q := generateQueue(curr, 1, 2)
+
+	var wg sync.WaitGroup
+	ch := make(chan UpdateBrightnessEvent, 100)
+
+	wg.Go(func() { processQueue(mockHandler, q, ch) })
+
+	time.Sleep(500 * time.Millisecond)
+	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(1005)*time.Millisecond), 1005)
+	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(1006)*time.Millisecond), 1006)
 
 	close(ch)
 	wg.Wait()

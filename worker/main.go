@@ -34,6 +34,7 @@ func processQueue(handler UpdateBrightnessEventHandler, q []UpdateBrightnessEven
 		// Non-blocking poll of the channel
 		select {
 		case new := <-ch:
+			fmt.Println("looping")
 			// Catches all buffer-created, late, or bugged updates.
 			if new.timestamp.Before(time.Now()) {
 				continue
@@ -45,7 +46,12 @@ func processQueue(handler UpdateBrightnessEventHandler, q []UpdateBrightnessEven
 				q = append(q, each)
 			}
 		default:
-			continue
+			if len(q) > 0 {
+				continue
+			} else {
+				new := <-ch
+				q = append(q, new)
+			}
 		}
 	}
 }
