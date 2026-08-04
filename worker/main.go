@@ -18,7 +18,7 @@ func handleUpdateBrightnessEvent(e UpdateBrightnessEvent) {
 	fmt.Println(time.Now(), "- Updating bulb", e.bulbNo, "to brightness", e.brightness)
 }
 
-func processQueue(handler UpdateBrightnessEventHandler, q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
+func processQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
 	defer cancel()
 

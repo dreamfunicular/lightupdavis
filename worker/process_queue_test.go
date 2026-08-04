@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"reflect"
 	"sync"
 	"testing"
@@ -68,6 +69,9 @@ func TestGenerateQueue(t *testing.T) {
 }
 
 func TestSingleEntryQueue(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	defer cancel()
+
 	curr := time.Now()
 	expected := generateQueue(curr, 1, 1)
 	actual := make([]UpdateBrightnessEvent, 0)
@@ -80,7 +84,7 @@ func TestSingleEntryQueue(t *testing.T) {
 	ch := make(chan UpdateBrightnessEvent, 100)
 
 	var wg sync.WaitGroup
-	wg.Go(func() { processQueue(mockHandler, q, ch) })
+	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
 
 	close(ch)
 	wg.Wait()
@@ -91,6 +95,9 @@ func TestSingleEntryQueue(t *testing.T) {
 }
 
 func TestTwoEntryQueue(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	defer cancel()
+
 	curr := time.Now()
 	expected := generateQueue(curr, 1, 2)
 	actual := make([]UpdateBrightnessEvent, 0)
@@ -103,7 +110,7 @@ func TestTwoEntryQueue(t *testing.T) {
 	ch := make(chan UpdateBrightnessEvent, 100)
 
 	var wg sync.WaitGroup
-	wg.Go(func() { processQueue(mockHandler, q, ch) })
+	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
 
 	close(ch)
 	wg.Wait()
@@ -114,6 +121,9 @@ func TestTwoEntryQueue(t *testing.T) {
 }
 
 func TestZeroEntryQueue(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	defer cancel()
+
 	expected := []UpdateBrightnessEvent{}
 	actual := make([]UpdateBrightnessEvent, 0)
 
@@ -125,14 +135,16 @@ func TestZeroEntryQueue(t *testing.T) {
 
 	ch := make(chan UpdateBrightnessEvent, 100)
 
-	processQueue(mockHandler, q, ch)
+	processQueue(ctx, mockHandler, q, ch)
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
 	}
 }
 
-func TestTwoEntryQueueWithSustainingChannels(t *testing.T) {
+func TestTwoEntryQueueWithImmediateMessages(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	defer cancel()
 	curr := time.Now()
 	expected := generateQueue(curr, 1, 4)
 
@@ -147,7 +159,7 @@ func TestTwoEntryQueueWithSustainingChannels(t *testing.T) {
 	var wg sync.WaitGroup
 	ch := make(chan UpdateBrightnessEvent, 100)
 
-	wg.Go(func() { processQueue(mockHandler, q, ch) })
+	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
 
 	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(3)*time.Millisecond), 3)
 	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(4)*time.Millisecond), 4)
@@ -160,7 +172,10 @@ func TestTwoEntryQueueWithSustainingChannels(t *testing.T) {
 	}
 }
 
-func TestTwoEntryQueueWithDelayedChannels(t *testing.T) {
+func TestTwoEntryQueueWithDelayedMessages(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	defer cancel()
+
 	curr := time.Now()
 	expected := generateQueue(curr, 1, 2)
 	expected = append(expected, generateQueue(curr, 1005, 2)...)
@@ -176,9 +191,9 @@ func TestTwoEntryQueueWithDelayedChannels(t *testing.T) {
 	var wg sync.WaitGroup
 	ch := make(chan UpdateBrightnessEvent, 100)
 
-	wg.Go(func() { processQueue(mockHandler, q, ch) })
+	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
 
-	time.Sleep(500 * time.Millisecond)
+	<-time.NewTimer(500 * time.Millisecond).C
 	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(1005)*time.Millisecond), 1005)
 	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(1006)*time.Millisecond), 1006)
 
