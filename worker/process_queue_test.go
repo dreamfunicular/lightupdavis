@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sync"
 	"testing"
@@ -65,11 +66,20 @@ func TestGenerateQueue(t *testing.T) {
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
+
+		if len(expected) != len(actual) {
+			fmt.Println("Expected:", len(expected), "Got:", len(actual))
+		} else {
+			for i := range len(expected) {
+				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+			}
+		}
+
 	}
 }
 
 func TestSingleEntryQueue(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Millisecond)
 	defer cancel()
 
 	curr := time.Now()
@@ -91,23 +101,36 @@ func TestSingleEntryQueue(t *testing.T) {
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
+
+		if len(expected) != len(actual) {
+			fmt.Println("Expected:", len(expected), "Got:", len(actual))
+		} else {
+			for i := range len(expected) {
+				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+			}
+		}
+
 	}
 }
 
 func TestTwoEntryQueue(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Millisecond)
 	defer cancel()
 
 	curr := time.Now()
-	expected := generateQueue(curr, 1, 2)
-	actual := make([]UpdateBrightnessEvent, 0)
 
+	expected := generateQueue(curr, 4, 1)
+	expected = append(expected, generateQueue(curr, 44, 1)...)
+
+	actual := make([]UpdateBrightnessEvent, 0)
 	mockHandler := func(e UpdateBrightnessEvent) {
 		actual = append(actual, e)
 	}
 
-	q := generateQueue(curr, 1, 2)
 	ch := make(chan UpdateBrightnessEvent, 100)
+
+	q := generateQueue(curr, 4, 1)
+	q = append(q, generateQueue(curr, 44, 1)...)
 
 	var wg sync.WaitGroup
 	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
@@ -117,11 +140,20 @@ func TestTwoEntryQueue(t *testing.T) {
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
+
+		if len(expected) != len(actual) {
+			fmt.Println("Expected:", len(expected), "Got:", len(actual))
+		} else {
+			for i := range len(expected) {
+				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+			}
+		}
+
 	}
 }
 
 func TestZeroEntryQueue(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
 
 	expected := []UpdateBrightnessEvent{}
@@ -139,68 +171,98 @@ func TestZeroEntryQueue(t *testing.T) {
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
+
+		if len(expected) != len(actual) {
+			fmt.Println("Expected:", len(expected), "Got:", len(actual))
+		} else {
+			for i := range len(expected) {
+				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+			}
+		}
+
 	}
 }
 
 func TestTwoEntryQueueWithImmediateMessages(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 	curr := time.Now()
-	expected := generateQueue(curr, 1, 4)
+	expected := generateQueue(curr, 40, 1)
+	expected = append(expected, generateQueue(curr, 80, 1)...)
+	expected = append(expected, generateQueue(curr, 120, 1)...)
+	expected = append(expected, generateQueue(curr, 160, 1)...)
 
-	var actualOrder []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
+	var actual []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
 
 	mockHandler := func(e UpdateBrightnessEvent) {
-		actualOrder = append(actualOrder, e)
+		actual = append(actual, e)
 	}
 
-	q := generateQueue(curr, 1, 2)
+	q := generateQueue(curr, 40, 1)
+	q = append(q, generateQueue(curr, 80, 1)...)
 
 	var wg sync.WaitGroup
 	ch := make(chan UpdateBrightnessEvent, 100)
 
 	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
 
-	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(3)*time.Millisecond), 3)
-	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(4)*time.Millisecond), 4)
+	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)
+	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(160)*time.Millisecond), 160)
 
 	close(ch)
 	wg.Wait()
 
-	if !reflect.DeepEqual(expected, actualOrder) {
+	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
+
+		if len(expected) != len(actual) {
+			fmt.Println("Expected:", len(expected), "Got:", len(actual))
+		} else {
+			for i := range len(expected) {
+				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+			}
+		}
+
 	}
 }
 
 func TestTwoEntryQueueWithDelayedMessages(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
-
 	curr := time.Now()
-	expected := generateQueue(curr, 1, 2)
-	expected = append(expected, generateQueue(curr, 1005, 2)...)
+	expected := generateQueue(curr, 120, 1)
+	expected = append(expected, generateQueue(curr, 160, 1)...)
 
-	var actualOrder []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
+	var actual []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
 
 	mockHandler := func(e UpdateBrightnessEvent) {
-		actualOrder = append(actualOrder, e)
+		actual = append(actual, e)
 	}
 
-	q := generateQueue(curr, 1, 2)
+	q := generateQueue(curr, 0, 0)
 
 	var wg sync.WaitGroup
 	ch := make(chan UpdateBrightnessEvent, 100)
 
 	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
 
-	<-time.NewTimer(500 * time.Millisecond).C
-	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(1005)*time.Millisecond), 1005)
-	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(1006)*time.Millisecond), 1006)
+	<-time.NewTimer(time.Millisecond * 50).C
+	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)
+	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(160)*time.Millisecond), 160)
 
 	close(ch)
 	wg.Wait()
 
-	if !reflect.DeepEqual(expected, actualOrder) {
+	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
+
+		if len(expected) != len(actual) {
+			fmt.Println("Expected:", len(expected), "Got:", len(actual))
+		} else {
+			for i := range len(expected) {
+				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+			}
+		}
+
 	}
 }

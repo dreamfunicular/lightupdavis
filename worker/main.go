@@ -19,9 +19,6 @@ func handleUpdateBrightnessEvent(e UpdateBrightnessEvent) {
 }
 
 func processQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
-	defer cancel()
-
 	for {
 		for len(q) > 0 {
 			e := q[0]
