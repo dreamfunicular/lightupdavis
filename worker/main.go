@@ -19,7 +19,9 @@ func handleUpdateBrightnessEvent(e UpdateBrightnessEvent) {
 }
 
 func processQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
+	i := 0
 	for {
+		i++
 		for len(q) > 0 {
 			e := q[0]
 
@@ -29,8 +31,7 @@ func processQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q [
 			}
 
 			go func() {
-				timer := time.NewTimer(time.Until(e.timestamp))
-				<-timer.C
+				<-time.NewTimer(time.Until(e.timestamp)).C
 				handler(e)
 			}()
 			q = q[1:]
@@ -38,8 +39,14 @@ func processQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q [
 
 		select {
 		case new := <-ch:
-			q = append(q, new)
+			if new.timestamp.Before(time.Now()) {
+				time.Sleep(20 * time.Millisecond)
+				continue
+			} else {
+				q = append(q, new)
+			}
 		case <-ctx.Done():
+			fmt.Println(i, "loops")
 			return
 		}
 	}
