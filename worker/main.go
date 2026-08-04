@@ -32,7 +32,8 @@ func processQueue(handler UpdateBrightnessEventHandler, q []UpdateBrightnessEven
 			}
 
 			go func() {
-				time.Sleep(time.Until(e.timestamp))
+				timer := time.NewTimer(time.Until(e.timestamp))
+				<-timer.C
 				handler(e)
 			}()
 			q = q[1:]
