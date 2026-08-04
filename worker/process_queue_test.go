@@ -187,6 +187,7 @@ func TestTwoEntryQueueWithImmediateMessages(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 	curr := time.Now()
+
 	expected := generateQueue(curr, 40, 1)
 	expected = append(expected, generateQueue(curr, 80, 1)...)
 	expected = append(expected, generateQueue(curr, 120, 1)...)
@@ -229,14 +230,15 @@ func TestTwoEntryQueueWithImmediateMessages(t *testing.T) {
 func TestTwoEntryQueueWithDelayedMessages(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
+
 	curr := time.Now()
+
 	expected := generateQueue(curr, 40, 1)
 	expected = append(expected, generateQueue(curr, 80, 1)...)
 	expected = append(expected, generateQueue(curr, 120, 1)...)
 	expected = append(expected, generateQueue(curr, 160, 1)...)
 
 	var actual []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
-
 	mockHandler := func(e UpdateBrightnessEvent) {
 		actual = append(actual, e)
 	}
@@ -273,12 +275,13 @@ func TestTwoEntryQueueWithDelayedMessages(t *testing.T) {
 func TestZeroEntryQueueWithDelayedMessages(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
+
 	curr := time.Now()
+
 	expected := generateQueue(curr, 120, 1)
 	expected = append(expected, generateQueue(curr, 160, 1)...)
 
 	var actual []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
-
 	mockHandler := func(e UpdateBrightnessEvent) {
 		actual = append(actual, e)
 	}
