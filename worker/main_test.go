@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"reflect"
+	"os"
 	"testing"
 	"time"
 )
@@ -36,13 +34,6 @@ func generateQueue(curr time.Time, start int, len int) (q []UpdateBrightnessEven
 
 func handlerFixture(actual []UpdateBrightnessEvent) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var e UpdateBrightnessEvent
-		var b []byte
-
-		r.Body.Read(b)
-		json.Unmarshal(b, &e)
-
-		actual = append(actual, e)
 	}
 }
 
@@ -50,26 +41,69 @@ func TestPing(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	expected := make([]UpdateBrightnessEvent, 0)
+	handlerCalled := false
 
-	actual := make([]UpdateBrightnessEvent, 0)
+	pingHandler := func(w http.ResponseWriter, r *http.Request) {
+		handlerCalled = true
+	}
 
-	go runServer(ctx, handlerFixture(actual))
+	go runServer(ctx, pingHandler)
 
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
 
-	http.NewRequest("GET", "localhost:8080", nil)
+	r, err := http.NewRequest("POST", "http://localhost:8080", nil)
+	if err != nil {
+		t.Error(err)
+		os.Exit(1)
+	}
+	_, err = http.DefaultClient.Do(r)
+	if err != nil {
+		t.Error(err)
+		os.Exit(1)
+	}
 
-	if !reflect.DeepEqual(expected, actual) {
-		t.Error("Contents of expected and actual calls to handler differed.")
+	time.Sleep(20 * time.Millisecond)
 
-		if len(expected) != len(actual) {
-			fmt.Println("Expected:", len(expected), "Got:", len(actual))
-		} else {
-			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
-			}
-		}
-
+	if !handlerCalled {
+		t.Errorf("Failed to ping the server")
 	}
 }
+
+// func TestOneMessage(t *testing.T) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+// 	defer cancel()
+
+// 	expected := make([]UpdateBrightnessEvent, 1)
+
+// 	actual := make([]UpdateBrightnessEvent, 0)
+
+// 	go runServer(ctx, handlerFixture(actual))
+
+// 	time.Sleep(500 * time.Millisecond)
+
+// 	r, err := http.NewRequest("POST", "http://localhost:8080", nil)
+// 	if err != nil {
+// 		t.Error(err)
+// 		os.Exit(1)
+// 	}
+// 	_, err = http.DefaultClient.Do(r)
+// 	if err != nil {
+// 		t.Error(err)
+// 		os.Exit(1)
+// 	}
+
+// 	time.Sleep(500 * time.Millisecond)
+
+// 	if !reflect.DeepEqual(expected, actual) {
+// 		t.Error("Contents of expected and actual calls to handler differed.")
+
+// 		if len(expected) != len(actual) {
+// 			fmt.Println("Expected:", len(expected), "Got:", len(actual))
+// 		} else {
+// 			for i := range len(expected) {
+// 				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+// 			}
+// 		}
+
+// 	}
+// }
