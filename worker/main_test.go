@@ -1,24 +1,29 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 )
 
 type UpdateBrightnessEvent struct {
-	timestamp  time.Time
-	bulbNo     int
-	brightness float32
+	Timestamp  time.Time
+	BulbNo     int
+	Brightness float32
 }
 
 func generateUpdateBrightnessEvent(t time.Time, i int) (e UpdateBrightnessEvent) {
 	return UpdateBrightnessEvent{
-		timestamp:  t,
-		bulbNo:     1,
-		brightness: float32(i) * 0.1,
+		Timestamp:  t,
+		BulbNo:     1,
+		Brightness: float32(i) * 0.1,
 	}
 }
 
@@ -30,11 +35,6 @@ func generateQueue(curr time.Time, start int, len int) (q []UpdateBrightnessEven
 	}
 
 	return q
-}
-
-func handlerFixture(actual []UpdateBrightnessEvent) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-	}
 }
 
 func TestPing(t *testing.T) {
@@ -69,41 +69,63 @@ func TestPing(t *testing.T) {
 	}
 }
 
-// func TestOneMessage(t *testing.T) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-// 	defer cancel()
+func TestOneMessage(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
 
-// 	expected := make([]UpdateBrightnessEvent, 1)
+	curr := time.Now().Truncate(0)
 
-// 	actual := make([]UpdateBrightnessEvent, 0)
+	expected := generateQueue(curr, 40, 1)
 
-// 	go runServer(ctx, handlerFixture(actual))
+	actual := make([]UpdateBrightnessEvent, 0)
 
-// 	time.Sleep(500 * time.Millisecond)
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		var e UpdateBrightnessEvent
+		var b []byte
 
-// 	r, err := http.NewRequest("POST", "http://localhost:8080", nil)
-// 	if err != nil {
-// 		t.Error(err)
-// 		os.Exit(1)
-// 	}
-// 	_, err = http.DefaultClient.Do(r)
-// 	if err != nil {
-// 		t.Error(err)
-// 		os.Exit(1)
-// 	}
+		b, err := io.ReadAll(r.Body)
 
-// 	time.Sleep(500 * time.Millisecond)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
-// 	if !reflect.DeepEqual(expected, actual) {
-// 		t.Error("Contents of expected and actual calls to handler differed.")
+		err = json.Unmarshal(b, &e)
 
-// 		if len(expected) != len(actual) {
-// 			fmt.Println("Expected:", len(expected), "Got:", len(actual))
-// 		} else {
-// 			for i := range len(expected) {
-// 				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
-// 			}
-// 		}
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
-// 	}
-// }
+		actual = append(actual, e)
+	}
+
+	go runServer(ctx, handler)
+
+	e := expected[0]
+	body, err := json.Marshal(e)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	http.Post("http://localhost:8080/", "application/json", bytes.NewBuffer(body))
+
+	time.Sleep(50 * time.Millisecond)
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Error("Contents of expected and actual calls to handler differed.")
+
+		if len(expected) != len(actual) {
+			fmt.Println("Expected:", len(expected), "Got:", len(actual))
+		} else {
+			for i := range len(expected) {
+				fmt.Println("Expected and actual are off by:", expected[i].Timestamp.Sub(actual[i].Timestamp))
+			}
+		}
+
+	}
+}
