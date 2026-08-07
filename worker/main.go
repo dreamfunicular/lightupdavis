@@ -4,13 +4,23 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *http.Request)) {
 	// http.HandleFunc("/", handler)
 	// log.Fatal(http.ListenAndServe(":8080", nil))
-	srv := &http.Server{Addr: ":8080"}
-	http.HandleFunc("/", handler)
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", handler)
+
+	srv := &http.Server{
+		Addr:         ":8080",
+		Handler:      mux,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
@@ -23,6 +33,8 @@ func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *htt
 
 	if err != nil {
 		fmt.Println("error ocurred")
+	} else {
+		fmt.Println("Server shut down properly")
 	}
 }
 
