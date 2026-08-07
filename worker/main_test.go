@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 )
@@ -38,40 +39,33 @@ func generateQueue(curr time.Time, start int, len int) (q []UpdateBrightnessEven
 }
 
 func TestPing(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
+	ctx, cancel := context.WithCancel(context.Background())
 
-	handlerCalled := false
+	called := false
 
-	pingHandler := func(w http.ResponseWriter, r *http.Request) {
-		handlerCalled = true
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		called = true
 	}
 
-	go runServer(ctx, pingHandler)
+	var wg sync.WaitGroup
+	wg.Go(func() { startServer(ctx, handler) })
 
-	time.Sleep(20 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 
-	r, err := http.NewRequest("POST", "http://localhost:8080", nil)
-	if err != nil {
-		t.Error(err)
-		os.Exit(1)
+	http.Post("http://localhost:8080/", "application/json", nil)
+
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+
+	if !called {
+		t.Errorf("Ping failed")
 	}
-	_, err = http.DefaultClient.Do(r)
-	if err != nil {
-		t.Error(err)
-		os.Exit(1)
-	}
 
-	time.Sleep(20 * time.Millisecond)
-
-	if !handlerCalled {
-		t.Errorf("Failed to ping the server")
-	}
+	wg.Wait()
 }
 
 func TestOneMessage(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
+	ctx, cancel := context.WithCancel(context.Background())
 
 	curr := time.Now().Truncate(0)
 
@@ -100,7 +94,7 @@ func TestOneMessage(t *testing.T) {
 		actual = append(actual, e)
 	}
 
-	go runServer(ctx, handler)
+	go startServer(ctx, handler)
 
 	e := expected[0]
 	body, err := json.Marshal(e)
@@ -115,6 +109,7 @@ func TestOneMessage(t *testing.T) {
 	http.Post("http://localhost:8080/", "application/json", bytes.NewBuffer(body))
 
 	time.Sleep(50 * time.Millisecond)
+	cancel()
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
