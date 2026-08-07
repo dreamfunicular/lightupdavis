@@ -8,8 +8,6 @@ import (
 )
 
 func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *http.Request)) {
-	// http.HandleFunc("/", handler)
-	// log.Fatal(http.ListenAndServe(":8080", nil))
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", handler)
@@ -32,9 +30,7 @@ func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *htt
 	err := srv.Shutdown(ctx)
 
 	if err != nil {
-		fmt.Println("error ocurred")
-	} else {
-		fmt.Println("Server shut down properly")
+		fmt.Println(err)
 	}
 }
 

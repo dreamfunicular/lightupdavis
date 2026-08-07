@@ -55,10 +55,11 @@ func TestPing(t *testing.T) {
 	http.Post("http://localhost:8080/", "application/json", nil)
 
 	time.Sleep(50 * time.Millisecond)
+
 	cancel()
 
 	if !called {
-		t.Errorf("Ping failed")
+		t.Errorf("HTTP ping to server failed")
 	}
 
 	wg.Wait()
@@ -94,7 +95,8 @@ func TestOneMessage(t *testing.T) {
 		actual = append(actual, e)
 	}
 
-	go startServer(ctx, handler)
+	var wg sync.WaitGroup
+	wg.Go(func() { startServer(ctx, handler) })
 
 	e := expected[0]
 	body, err := json.Marshal(e)
@@ -109,6 +111,7 @@ func TestOneMessage(t *testing.T) {
 	http.Post("http://localhost:8080/", "application/json", bytes.NewBuffer(body))
 
 	time.Sleep(50 * time.Millisecond)
+
 	cancel()
 
 	if !reflect.DeepEqual(expected, actual) {
@@ -123,4 +126,6 @@ func TestOneMessage(t *testing.T) {
 		}
 
 	}
+
+	wg.Wait()
 }
