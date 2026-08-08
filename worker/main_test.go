@@ -12,23 +12,19 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/dreamfunicular/lightupdavis/worker/queue"
 )
 
-type UpdateBrightnessEvent struct {
-	Timestamp  time.Time
-	BulbNo     int
-	Brightness float32
-}
-
-func generateUpdateBrightnessEvent(t time.Time, i int) (e UpdateBrightnessEvent) {
-	return UpdateBrightnessEvent{
-		Timestamp:  t,
-		BulbNo:     1,
-		Brightness: float32(i) * 0.1,
+func generateUpdateBrightnessEvent(t time.Time, i int) (e queue.UpdateBrightnessEvent) {
+	return queue.UpdateBrightnessEvent{
+		Time:   t,
+		BulbNo: 1,
+		Power:  float32(i) * 0.1,
 	}
 }
 
-func generateQueue(curr time.Time, start int, len int) (q []UpdateBrightnessEvent) {
+func generateQueue(curr time.Time, start int, len int) (q []queue.UpdateBrightnessEvent) {
 	for i := start; i < start+len; i++ {
 		newTime := curr.Add(time.Duration(i) * time.Millisecond)
 		new := generateUpdateBrightnessEvent(newTime, i)
@@ -72,10 +68,10 @@ func TestOneMessage(t *testing.T) {
 
 	expected := generateQueue(curr, 40, 1)
 
-	actual := make([]UpdateBrightnessEvent, 0)
+	actual := make([]queue.UpdateBrightnessEvent, 0)
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		var e UpdateBrightnessEvent
+		var e queue.UpdateBrightnessEvent
 		var b []byte
 
 		b, err := io.ReadAll(r.Body)
@@ -121,7 +117,7 @@ func TestOneMessage(t *testing.T) {
 			fmt.Println("Expected:", len(expected), "Got:", len(actual))
 		} else {
 			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].Timestamp.Sub(actual[i].Timestamp))
+				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
 			}
 		}
 
