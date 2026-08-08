@@ -1,3 +1,3 @@
 #!/usr/bin/python3
 
-print("Pre-commit test")
+exit 1
