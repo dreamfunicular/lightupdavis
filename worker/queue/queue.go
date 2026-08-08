@@ -9,13 +9,13 @@ import (
 type UpdateBrightnessEventHandler func(UpdateBrightnessEvent)
 
 type UpdateBrightnessEvent struct {
-	timestamp  time.Time
-	bulbNo     int
-	brightness float32
+	Time   time.Time
+	BulbNo int
+	Power  float32
 }
 
 func handleUpdateBrightnessEvent(e UpdateBrightnessEvent) {
-	fmt.Println(time.Now(), "- Updating bulb", e.bulbNo, "to brightness", e.brightness)
+	fmt.Println(time.Now(), "- Updating bulb", e.BulbNo, "to brightness", e.Power)
 }
 
 func processQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
@@ -25,13 +25,13 @@ func processQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q [
 		for len(q) > 0 {
 			e := q[0]
 
-			if e.timestamp.Compare(time.Now()) == -1 {
+			if e.Time.Compare(time.Now()) == -1 {
 				q = q[1:]
 				continue
 			}
 
 			go func() {
-				<-time.NewTimer(time.Until(e.timestamp)).C
+				<-time.NewTimer(time.Until(e.Time)).C
 				handler(e)
 			}()
 			q = q[1:]
@@ -39,7 +39,7 @@ func processQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q [
 
 		select {
 		case new := <-ch:
-			if new.timestamp.Before(time.Now()) {
+			if new.Time.Before(time.Now()) {
 				time.Sleep(20 * time.Millisecond)
 				continue
 			} else {

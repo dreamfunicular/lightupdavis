@@ -11,18 +11,18 @@ import (
 
 func generateUpdateBrightnessEvent(t time.Time, i int) (e UpdateBrightnessEvent) {
 	return UpdateBrightnessEvent{
-		timestamp:  t,
-		bulbNo:     1,
-		brightness: float32(i) * 0.1,
+		Time:   t,
+		BulbNo: 1,
+		Power:  float32(i) * 0.1,
 	}
 }
 
 func TestGenerateUpdateBrightnessEvent(t *testing.T) {
 	curr := time.Now()
 	expected := UpdateBrightnessEvent{
-		timestamp:  curr,
-		bulbNo:     1,
-		brightness: 0.1,
+		Time:   curr,
+		BulbNo: 1,
+		Power:  0.1,
 	}
 	actual := generateUpdateBrightnessEvent(curr, 1)
 
@@ -46,19 +46,19 @@ func TestGenerateQueue(t *testing.T) {
 
 	expected := []UpdateBrightnessEvent{
 		{
-			timestamp:  curr.Add(1 * time.Millisecond),
-			bulbNo:     1,
-			brightness: .1,
+			Time:   curr.Add(1 * time.Millisecond),
+			BulbNo: 1,
+			Power:  .1,
 		},
 		{
-			timestamp:  curr.Add(2 * time.Millisecond),
-			bulbNo:     1,
-			brightness: .2,
+			Time:   curr.Add(2 * time.Millisecond),
+			BulbNo: 1,
+			Power:  .2,
 		},
 		{
-			timestamp:  curr.Add(3 * time.Millisecond),
-			bulbNo:     1,
-			brightness: .3,
+			Time:   curr.Add(3 * time.Millisecond),
+			BulbNo: 1,
+			Power:  .3,
 		},
 	}
 
@@ -71,7 +71,7 @@ func TestGenerateQueue(t *testing.T) {
 			fmt.Println("Expected:", len(expected), "Got:", len(actual))
 		} else {
 			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
 			}
 		}
 
@@ -106,7 +106,7 @@ func TestSingleEntryQueue(t *testing.T) {
 			fmt.Println("Expected:", len(expected), "Got:", len(actual))
 		} else {
 			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
 			}
 		}
 
@@ -145,7 +145,7 @@ func TestTwoEntryQueue(t *testing.T) {
 			fmt.Println("Expected:", len(expected), "Got:", len(actual))
 		} else {
 			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
 			}
 		}
 
@@ -176,7 +176,7 @@ func TestZeroEntryQueue(t *testing.T) {
 			fmt.Println("Expected:", len(expected), "Got:", len(actual))
 		} else {
 			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
 			}
 		}
 
@@ -220,7 +220,7 @@ func TestTwoEntryQueueWithImmediateMessages(t *testing.T) {
 			fmt.Println("Expected:", len(expected), "Got:", len(actual))
 		} else {
 			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
 			}
 		}
 
@@ -265,7 +265,7 @@ func TestTwoEntryQueueWithDelayedMessages(t *testing.T) {
 			fmt.Println("Expected:", len(expected), "Got:", len(actual))
 		} else {
 			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
 			}
 		}
 
@@ -307,7 +307,7 @@ func TestZeroEntryQueueWithDelayedMessages(t *testing.T) {
 			fmt.Println("Expected:", len(expected), "Got:", len(actual))
 		} else {
 			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].timestamp.Sub(actual[i].timestamp))
+				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
 			}
 		}
 
