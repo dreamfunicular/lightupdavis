@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func generateUpdateBrightnessEvent(t time.Time, i int) (e UpdateBrightnessEvent) {
+func GenerateUpdateBrightnessEvent(t time.Time, i int) (e UpdateBrightnessEvent) {
 	return UpdateBrightnessEvent{
 		Time:   t,
 		BulbNo: 1,
@@ -24,17 +24,17 @@ func TestGenerateUpdateBrightnessEvent(t *testing.T) {
 		BulbNo: 1,
 		Power:  0.1,
 	}
-	actual := generateUpdateBrightnessEvent(curr, 1)
+	actual := GenerateUpdateBrightnessEvent(curr, 1)
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Unequal!")
 	}
 }
 
-func generateQueue(curr time.Time, start int, len int) (q []UpdateBrightnessEvent) {
+func GenerateQueue(curr time.Time, start int, len int) (q []UpdateBrightnessEvent) {
 	for i := start; i < start+len; i++ {
 		newTime := curr.Add(time.Duration(i) * time.Millisecond)
-		new := generateUpdateBrightnessEvent(newTime, i)
+		new := GenerateUpdateBrightnessEvent(newTime, i)
 		q = append(q, new)
 	}
 
@@ -62,7 +62,7 @@ func TestGenerateQueue(t *testing.T) {
 		},
 	}
 
-	actual := generateQueue(curr, 1, 3)
+	actual := GenerateQueue(curr, 1, 3)
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
@@ -83,14 +83,14 @@ func TestSingleEntryQueue(t *testing.T) {
 	defer cancel()
 
 	curr := time.Now()
-	expected := generateQueue(curr, 1, 1)
+	expected := GenerateQueue(curr, 1, 1)
 	actual := make([]UpdateBrightnessEvent, 0)
 
 	mockHandler := func(e UpdateBrightnessEvent) {
 		actual = append(actual, e)
 	}
 
-	q := generateQueue(curr, 1, 1)
+	q := GenerateQueue(curr, 1, 1)
 	ch := make(chan UpdateBrightnessEvent, 100)
 
 	var wg sync.WaitGroup
@@ -119,8 +119,8 @@ func TestTwoEntryQueue(t *testing.T) {
 
 	curr := time.Now()
 
-	expected := generateQueue(curr, 4, 1)
-	expected = append(expected, generateQueue(curr, 44, 1)...)
+	expected := GenerateQueue(curr, 4, 1)
+	expected = append(expected, GenerateQueue(curr, 44, 1)...)
 
 	actual := make([]UpdateBrightnessEvent, 0)
 	mockHandler := func(e UpdateBrightnessEvent) {
@@ -129,8 +129,8 @@ func TestTwoEntryQueue(t *testing.T) {
 
 	ch := make(chan UpdateBrightnessEvent, 100)
 
-	q := generateQueue(curr, 4, 1)
-	q = append(q, generateQueue(curr, 44, 1)...)
+	q := GenerateQueue(curr, 4, 1)
+	q = append(q, GenerateQueue(curr, 44, 1)...)
 
 	var wg sync.WaitGroup
 	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
@@ -188,10 +188,10 @@ func TestTwoEntryQueueWithImmediateMessages(t *testing.T) {
 	defer cancel()
 	curr := time.Now()
 
-	expected := generateQueue(curr, 40, 1)
-	expected = append(expected, generateQueue(curr, 80, 1)...)
-	expected = append(expected, generateQueue(curr, 120, 1)...)
-	expected = append(expected, generateQueue(curr, 160, 1)...)
+	expected := GenerateQueue(curr, 40, 1)
+	expected = append(expected, GenerateQueue(curr, 80, 1)...)
+	expected = append(expected, GenerateQueue(curr, 120, 1)...)
+	expected = append(expected, GenerateQueue(curr, 160, 1)...)
 
 	var actual []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
 
@@ -199,16 +199,16 @@ func TestTwoEntryQueueWithImmediateMessages(t *testing.T) {
 		actual = append(actual, e)
 	}
 
-	q := generateQueue(curr, 40, 1)
-	q = append(q, generateQueue(curr, 80, 1)...)
+	q := GenerateQueue(curr, 40, 1)
+	q = append(q, GenerateQueue(curr, 80, 1)...)
 
 	var wg sync.WaitGroup
 	ch := make(chan UpdateBrightnessEvent, 100)
 
 	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
 
-	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)
-	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(160)*time.Millisecond), 160)
+	ch <- GenerateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)
+	ch <- GenerateUpdateBrightnessEvent(curr.Add(time.Duration(160)*time.Millisecond), 160)
 
 	close(ch)
 	wg.Wait()
@@ -233,18 +233,18 @@ func TestTwoEntryQueueWithDelayedMessages(t *testing.T) {
 
 	curr := time.Now()
 
-	expected := generateQueue(curr, 40, 1)
-	expected = append(expected, generateQueue(curr, 80, 1)...)
-	expected = append(expected, generateQueue(curr, 120, 1)...)
-	expected = append(expected, generateQueue(curr, 160, 1)...)
+	expected := GenerateQueue(curr, 40, 1)
+	expected = append(expected, GenerateQueue(curr, 80, 1)...)
+	expected = append(expected, GenerateQueue(curr, 120, 1)...)
+	expected = append(expected, GenerateQueue(curr, 160, 1)...)
 
 	var actual []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
 	mockHandler := func(e UpdateBrightnessEvent) {
 		actual = append(actual, e)
 	}
 
-	q := generateQueue(curr, 40, 1)
-	q = append(q, generateQueue(curr, 80, 1)...)
+	q := GenerateQueue(curr, 40, 1)
+	q = append(q, GenerateQueue(curr, 80, 1)...)
 
 	var wg sync.WaitGroup
 	ch := make(chan UpdateBrightnessEvent, 100)
@@ -252,8 +252,8 @@ func TestTwoEntryQueueWithDelayedMessages(t *testing.T) {
 	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
 
 	<-time.NewTimer(time.Millisecond * 50).C
-	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)
-	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(160)*time.Millisecond), 160)
+	ch <- GenerateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)
+	ch <- GenerateUpdateBrightnessEvent(curr.Add(time.Duration(160)*time.Millisecond), 160)
 
 	close(ch)
 	wg.Wait()
@@ -278,15 +278,15 @@ func TestZeroEntryQueueWithDelayedMessages(t *testing.T) {
 
 	curr := time.Now()
 
-	expected := generateQueue(curr, 120, 1)
-	expected = append(expected, generateQueue(curr, 160, 1)...)
+	expected := GenerateQueue(curr, 120, 1)
+	expected = append(expected, GenerateQueue(curr, 160, 1)...)
 
 	var actual []UpdateBrightnessEvent = make([]UpdateBrightnessEvent, 0)
 	mockHandler := func(e UpdateBrightnessEvent) {
 		actual = append(actual, e)
 	}
 
-	q := generateQueue(curr, 0, 0)
+	q := GenerateQueue(curr, 0, 0)
 
 	var wg sync.WaitGroup
 	ch := make(chan UpdateBrightnessEvent, 100)
@@ -294,8 +294,8 @@ func TestZeroEntryQueueWithDelayedMessages(t *testing.T) {
 	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
 
 	<-time.NewTimer(time.Millisecond * 50).C
-	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)
-	ch <- generateUpdateBrightnessEvent(curr.Add(time.Duration(160)*time.Millisecond), 160)
+	ch <- GenerateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)
+	ch <- GenerateUpdateBrightnessEvent(curr.Add(time.Duration(160)*time.Millisecond), 160)
 
 	close(ch)
 	wg.Wait()
