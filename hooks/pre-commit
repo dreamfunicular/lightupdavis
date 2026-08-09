@@ -1,3 +1,25 @@
-#!/usr/bin/python3
+#!/bin/bash
 
-exit 1
+echo "Running pre-commit tests...";
+echo "Testing worker/main";
+cd ./worker;
+if go test . -count=1 | grep "ok"
+then
+    echo "Was ok"
+else
+    echo "Was not"
+    exit 1
+fi
+
+echo "Testing worker/queue";
+cd ./queue;
+if go test . -count=1 | grep "ok"
+then
+    echo "Was ok"
+else
+    echo "Was not"
+    exit 1
+fi
+
+
+exit 0
