@@ -34,17 +34,19 @@ func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *htt
 	}
 }
 
-// func main() {
-// 	ctx, cancel := context.WithCancel(context.Background())
+func main() {
+	// ctx, cancel := context.WithCancel(context.Background())
 
-// 	go startServer(ctx, func(w http.ResponseWriter, r *http.Request) { fmt.Println("Received incoming request") })
+	// go startServer(ctx, func(w http.ResponseWriter, r *http.Request) { fmt.Println("Received incoming request") })
 
-// 	time.Sleep(100 * time.Millisecond)
-// 	cancel()
-// 	//		// MVP Project
-// 	//		// Create channel
-// 	//		// Spin up proccess queue that reads from channel
-// 	//		// Create handler function that writes to channel
-// 	//		// Spin up server with handler function
-// 	//	}
-// }
+	// time.Sleep(100 * time.Millisecond)
+	// cancel()
+	// MVP Project
+
+	// ch := make(chan queue.UpdateBrightnessEvent, 100)
+	// Spin up proccess queue that reads from channel
+
+	// queue.
+	// Create handler function that writes to channel
+	// Spin up server with handler function
+}

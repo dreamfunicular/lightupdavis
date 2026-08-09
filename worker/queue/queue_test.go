@@ -94,7 +94,7 @@ func TestSingleEntryQueue(t *testing.T) {
 	ch := make(chan UpdateBrightnessEvent, 100)
 
 	var wg sync.WaitGroup
-	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
+	wg.Go(func() { StartProcessQueue(ctx, mockHandler, q, ch) })
 
 	close(ch)
 	wg.Wait()
@@ -133,7 +133,7 @@ func TestTwoEntryQueue(t *testing.T) {
 	q = append(q, GenerateQueue(curr, 44, 1)...)
 
 	var wg sync.WaitGroup
-	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
+	wg.Go(func() { StartProcessQueue(ctx, mockHandler, q, ch) })
 
 	close(ch)
 	wg.Wait()
@@ -167,7 +167,7 @@ func TestZeroEntryQueue(t *testing.T) {
 
 	ch := make(chan UpdateBrightnessEvent, 100)
 
-	processQueue(ctx, mockHandler, q, ch)
+	StartProcessQueue(ctx, mockHandler, q, ch)
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Contents of expected and actual calls to handler differed.")
@@ -205,7 +205,7 @@ func TestTwoEntryQueueWithImmediateMessages(t *testing.T) {
 	var wg sync.WaitGroup
 	ch := make(chan UpdateBrightnessEvent, 100)
 
-	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
+	wg.Go(func() { StartProcessQueue(ctx, mockHandler, q, ch) })
 
 	ch <- GenerateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)
 	ch <- GenerateUpdateBrightnessEvent(curr.Add(time.Duration(160)*time.Millisecond), 160)
@@ -249,7 +249,7 @@ func TestTwoEntryQueueWithDelayedMessages(t *testing.T) {
 	var wg sync.WaitGroup
 	ch := make(chan UpdateBrightnessEvent, 100)
 
-	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
+	wg.Go(func() { StartProcessQueue(ctx, mockHandler, q, ch) })
 
 	<-time.NewTimer(time.Millisecond * 50).C
 	ch <- GenerateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)
@@ -291,7 +291,7 @@ func TestZeroEntryQueueWithDelayedMessages(t *testing.T) {
 	var wg sync.WaitGroup
 	ch := make(chan UpdateBrightnessEvent, 100)
 
-	wg.Go(func() { processQueue(ctx, mockHandler, q, ch) })
+	wg.Go(func() { StartProcessQueue(ctx, mockHandler, q, ch) })
 
 	<-time.NewTimer(time.Millisecond * 50).C
 	ch <- GenerateUpdateBrightnessEvent(curr.Add(time.Duration(120)*time.Millisecond), 120)

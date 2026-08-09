@@ -18,7 +18,7 @@ func handleUpdateBrightnessEvent(e UpdateBrightnessEvent) {
 	fmt.Println(time.Now(), "- Updating bulb", e.BulbNo, "to brightness", e.Power)
 }
 
-func processQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
+func StartProcessQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
 	i := 0
 	for {
 		i++
