@@ -23,6 +23,7 @@ func generateUpdateBrightnessEvent(t time.Time) (e queue.UpdateBrightnessEvent) 
 		Power:  1,
 	}
 }
+
 func generateArray(start time.Time, delays []int) (q []queue.UpdateBrightnessEvent) {
 	q = make([]queue.UpdateBrightnessEvent, 0)
 
@@ -33,6 +34,30 @@ func generateArray(start time.Time, delays []int) (q []queue.UpdateBrightnessEve
 	}
 
 	return q
+}
+
+func setupEnv() (context.Context, context.CancelFunc, time.Time, *sync.WaitGroup) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	curr := time.Now().Truncate(0)
+
+	var wg sync.WaitGroup
+	return ctx, cancel, curr, &wg
+}
+
+func compare(t *testing.T, expected []queue.UpdateBrightnessEvent, actual []queue.UpdateBrightnessEvent) {
+	if !reflect.DeepEqual(expected, actual) {
+		t.Error("Contents of expected and actual calls to handler differed.")
+
+		if len(expected) != len(actual) {
+			fmt.Println("Expected:", len(expected), "Got:", len(actual))
+		} else {
+			for i := range len(expected) {
+				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
+			}
+		}
+
+	}
 }
 
 func TestGenerateArray(t *testing.T) {
@@ -59,7 +84,7 @@ func TestGenerateArray(t *testing.T) {
 }
 
 func TestPing(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel, _, wg := setupEnv()
 
 	called := false
 
@@ -67,7 +92,6 @@ func TestPing(t *testing.T) {
 		called = true
 	}
 
-	var wg sync.WaitGroup
 	wg.Go(func() { startServer(ctx, handler) })
 
 	time.Sleep(50 * time.Millisecond)
@@ -86,9 +110,7 @@ func TestPing(t *testing.T) {
 }
 
 func TestOneMessage(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	curr := time.Now().Truncate(0)
+	ctx, cancel, curr, wg := setupEnv()
 
 	expected := generateArray(curr, []int{20})
 
@@ -115,7 +137,6 @@ func TestOneMessage(t *testing.T) {
 		actual = append(actual, e)
 	}
 
-	var wg sync.WaitGroup
 	wg.Go(func() { startServer(ctx, handler) })
 
 	e := expected[0]
@@ -134,26 +155,13 @@ func TestOneMessage(t *testing.T) {
 
 	cancel()
 
-	if !reflect.DeepEqual(expected, actual) {
-		t.Error("Contents of expected and actual calls to handler differed.")
-
-		if len(expected) != len(actual) {
-			fmt.Println("Expected:", len(expected), "Got:", len(actual))
-		} else {
-			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
-			}
-		}
-
-	}
+	compare(t, expected, actual)
 
 	wg.Wait()
 }
 
 func TestThreeMessages(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	curr := time.Now().Truncate(0)
+	ctx, cancel, curr, wg := setupEnv()
 
 	expected := generateArray(curr, []int{20, 60, 100})
 
@@ -180,7 +188,6 @@ func TestThreeMessages(t *testing.T) {
 		actual = append(actual, e)
 	}
 
-	var wg sync.WaitGroup
 	wg.Go(func() { startServer(ctx, handler) })
 
 	for i := range expected {
@@ -202,18 +209,7 @@ func TestThreeMessages(t *testing.T) {
 
 	cancel()
 
-	if !reflect.DeepEqual(expected, actual) {
-		t.Error("Contents of expected and actual calls to handler differed.")
-
-		if len(expected) != len(actual) {
-			fmt.Println("Expected:", len(expected), "Got:", len(actual))
-		} else {
-			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
-			}
-		}
-
-	}
+	compare(t, expected, actual)
 
 	wg.Wait()
 }
