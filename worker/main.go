@@ -34,18 +34,43 @@ func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *htt
 	}
 }
 
-func main() {
-	// ctx, cancel := context.WithCancel(context.Background())
+// func channelHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.ResponseWriter, r *http.Request)) {
+// 	ch = make(chan queue.UpdateBrightnessEvent, 100)
 
-	// go startServer(ctx, func(w http.ResponseWriter, r *http.Request) { fmt.Println("Received incoming request") })
+// 	handler = func(w http.ResponseWriter, r *http.Request) {
+// 		var e queue.UpdateBrightnessEvent
+// 		var b []byte
 
-	// time.Sleep(100 * time.Millisecond)
-	// cancel()
+// 		b, err := io.ReadAll(r.Body)
 
-	// ch := make(chan queue.UpdateBrightnessEvent, 100)
-	// Spin up proccess queue that reads from channel
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			os.Exit(1)
+// 		}
 
-	// queue.StartProcessQueue(ctx)
-	// Create handler function that writes to channel
-	// Spin up server with handler function
-}
+// 		err = json.Unmarshal(b, &e)
+
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			os.Exit(1)
+// 		}
+
+// 		ch <- e
+// 	}
+
+// 	return ch, handler
+// }
+
+// func main() {
+// ctx, cancel := context.WithCancel(context.Background())
+
+// ch, handler := channelHandler()
+
+// go startServer(ctx, func(w http.ResponseWriter, r *http.Request) { fmt.Println("Received incoming request") })
+// Spin up proccess queue that reads from channel
+
+// queue.StartProcessQueue(ctx)
+// Create handler function that writes to channel
+// Spin up server with handler function
+// }
+//

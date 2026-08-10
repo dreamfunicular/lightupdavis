@@ -36,7 +36,7 @@ func generateArray(start time.Time, delays []int) (q []queue.UpdateBrightnessEve
 	return q
 }
 
-func setupEnv() (context.Context, context.CancelFunc, time.Time, *sync.WaitGroup) {
+func generateEnv() (context.Context, context.CancelFunc, time.Time, *sync.WaitGroup) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	curr := time.Now().Truncate(0)
@@ -59,6 +59,7 @@ func compare(t *testing.T, expected []queue.UpdateBrightnessEvent, actual []queu
 
 	}
 }
+
 func generateTestHandler() (*[]queue.UpdateBrightnessEvent, func(w http.ResponseWriter, r *http.Request)) {
 	actual := make([]queue.UpdateBrightnessEvent, 0)
 
@@ -109,8 +110,10 @@ func TestGenerateArray(t *testing.T) {
 	}
 }
 
-func TestPing(t *testing.T) {
-	ctx, cancel, _, wg := setupEnv()
+// startServer method tests
+
+func TestStartServerPing(t *testing.T) {
+	ctx, cancel, _, wg := generateEnv()
 
 	called := false
 
@@ -135,8 +138,8 @@ func TestPing(t *testing.T) {
 	wg.Wait()
 }
 
-func testMessages(t *testing.T, delays []int) {
-	ctx, cancel, curr, wg := setupEnv()
+func testStartServerMessages(t *testing.T, delays []int) {
+	ctx, cancel, curr, wg := generateEnv()
 
 	expected := generateArray(curr, delays)
 
@@ -168,20 +171,26 @@ func testMessages(t *testing.T, delays []int) {
 	wg.Wait()
 }
 
-func TestZeroMessages(t *testing.T) {
+func TestStartServerZeroMessages(t *testing.T) {
 	delays := []int{}
 
-	testMessages(t, delays)
+	testStartServerMessages(t, delays)
 }
 
-func TestOneMessage(t *testing.T) {
+func TestStartServerOneMessage(t *testing.T) {
 	delays := []int{20}
 
-	testMessages(t, delays)
+	testStartServerMessages(t, delays)
 }
 
-func TestThreeMessages(t *testing.T) {
+func TestStartServerThreeMessages(t *testing.T) {
 	delays := []int{20, 60, 100}
 
-	testMessages(t, delays)
+	testStartServerMessages(t, delays)
 }
+
+// channelHandler unit tests
+
+// func TestOneMessageToHandler(t *testing.T) {
+// 	ch, handler := channelHandler()
+// }
