@@ -2,9 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/dreamfunicular/lightupdavis/worker/queue"
 )
 
 func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *http.Request)) {
@@ -34,32 +39,32 @@ func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *htt
 	}
 }
 
-// func channelHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.ResponseWriter, r *http.Request)) {
-// 	ch = make(chan queue.UpdateBrightnessEvent, 100)
+func channelHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.ResponseWriter, r *http.Request)) {
+	ch = make(chan queue.UpdateBrightnessEvent, 100)
 
-// 	handler = func(w http.ResponseWriter, r *http.Request) {
-// 		var e queue.UpdateBrightnessEvent
-// 		var b []byte
+	handler = func(w http.ResponseWriter, r *http.Request) {
+		var e queue.UpdateBrightnessEvent
+		var b []byte
 
-// 		b, err := io.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 
-// 		if err != nil {
-// 			fmt.Println(err)
-// 			os.Exit(1)
-// 		}
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
-// 		err = json.Unmarshal(b, &e)
+		err = json.Unmarshal(b, &e)
 
-// 		if err != nil {
-// 			fmt.Println(err)
-// 			os.Exit(1)
-// 		}
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
-// 		ch <- e
-// 	}
+		ch <- e
+	}
 
-// 	return ch, handler
-// }
+	return ch, handler
+}
 
 // func main() {
 // ctx, cancel := context.WithCancel(context.Background())
@@ -73,4 +78,3 @@ func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *htt
 // Create handler function that writes to channel
 // Spin up server with handler function
 // }
-//

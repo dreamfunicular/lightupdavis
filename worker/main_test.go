@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"sync"
@@ -28,7 +29,7 @@ func generateArray(start time.Time, delays []int) (q []queue.UpdateBrightnessEve
 	q = make([]queue.UpdateBrightnessEvent, 0)
 
 	for i := range delays {
-		newTime := start.Add(time.Duration(delays[i]) * time.Millisecond)
+		newTime := start.Add(time.Duration(delays[i]) * time.Millisecond).Truncate(0)
 		e := generateUpdateBrightnessEvent(newTime)
 		q = append(q, e)
 	}
@@ -92,12 +93,12 @@ func TestGenerateArray(t *testing.T) {
 
 	expected := []queue.UpdateBrightnessEvent{
 		{
-			Time:   curr.Add(20 * time.Millisecond),
+			Time:   curr.Add(20 * time.Millisecond).Truncate(0),
 			BulbNo: 1,
 			Power:  1,
 		},
 		{
-			Time:   curr.Add(40 * time.Millisecond),
+			Time:   curr.Add(40 * time.Millisecond).Truncate(0),
 			BulbNo: 1,
 			Power:  1,
 		},
@@ -191,6 +192,39 @@ func TestStartServerThreeMessages(t *testing.T) {
 
 // channelHandler unit tests
 
-// func TestOneMessageToHandler(t *testing.T) {
-// 	ch, handler := channelHandler()
-// }
+func TestOneMessageToHandler(t *testing.T) {
+	ch, handler := channelHandler()
+
+	curr := time.Now()
+
+	expected := generateArray(curr, []int{20})
+
+	b, err := json.Marshal(expected[0])
+
+	if err != nil {
+		t.Errorf("JSON marshal failure")
+	}
+
+	r, err := http.NewRequest(
+		"POST",
+		"https://localhost:8080",
+		bytes.NewBuffer(b),
+	)
+
+	if err != nil {
+		t.Errorf("Request creation")
+	}
+
+	w := httptest.NewRecorder()
+
+	handler(w, r)
+
+	var actual []queue.UpdateBrightnessEvent
+
+	close(ch)
+	for e := range ch {
+		actual = append(actual, e)
+	}
+
+	compare(t, expected, actual)
+}
