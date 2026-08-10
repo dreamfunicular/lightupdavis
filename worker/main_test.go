@@ -16,7 +16,7 @@ import (
 	"github.com/dreamfunicular/lightupdavis/worker/queue"
 )
 
-func generateUpdateBrightnessEvent(t time.Time, i int) (e queue.UpdateBrightnessEvent) {
+func generateUpdateBrightnessEvent(t time.Time) (e queue.UpdateBrightnessEvent) {
 	return queue.UpdateBrightnessEvent{
 		Time:   t,
 		BulbNo: 1,
@@ -28,7 +28,7 @@ func generateArray(start time.Time, delays []int) (q []queue.UpdateBrightnessEve
 
 	for i := range delays {
 		newTime := start.Add(time.Duration(delays[i]) * time.Millisecond)
-		e := generateUpdateBrightnessEvent(newTime, 1)
+		e := generateUpdateBrightnessEvent(newTime)
 		q = append(q, e)
 	}
 
