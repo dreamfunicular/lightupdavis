@@ -59,6 +59,32 @@ func compare(t *testing.T, expected []queue.UpdateBrightnessEvent, actual []queu
 
 	}
 }
+func generateTestHandler() (*[]queue.UpdateBrightnessEvent, func(w http.ResponseWriter, r *http.Request)) {
+	actual := make([]queue.UpdateBrightnessEvent, 0)
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		var e queue.UpdateBrightnessEvent
+		var b []byte
+
+		b, err := io.ReadAll(r.Body)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		err = json.Unmarshal(b, &e)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		actual = append(actual, e)
+	}
+
+	return &actual, handler
+}
 
 func TestGenerateArray(t *testing.T) {
 	curr := time.Now()
@@ -109,84 +135,12 @@ func TestPing(t *testing.T) {
 	wg.Wait()
 }
 
-func TestOneMessage(t *testing.T) {
+func testMessages(t *testing.T, delays []int) {
 	ctx, cancel, curr, wg := setupEnv()
 
-	expected := generateArray(curr, []int{20})
+	expected := generateArray(curr, delays)
 
-	actual := make([]queue.UpdateBrightnessEvent, 0)
-
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		var e queue.UpdateBrightnessEvent
-		var b []byte
-
-		b, err := io.ReadAll(r.Body)
-
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		err = json.Unmarshal(b, &e)
-
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		actual = append(actual, e)
-	}
-
-	wg.Go(func() { startServer(ctx, handler) })
-
-	e := expected[0]
-	body, err := json.Marshal(e)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	time.Sleep(50 * time.Millisecond)
-
-	http.Post("http://localhost:8080/", "application/json", bytes.NewBuffer(body))
-
-	time.Sleep(50 * time.Millisecond)
-
-	cancel()
-
-	compare(t, expected, actual)
-
-	wg.Wait()
-}
-
-func TestThreeMessages(t *testing.T) {
-	ctx, cancel, curr, wg := setupEnv()
-
-	expected := generateArray(curr, []int{20, 60, 100})
-
-	actual := make([]queue.UpdateBrightnessEvent, 0)
-
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		var e queue.UpdateBrightnessEvent
-		var b []byte
-
-		b, err := io.ReadAll(r.Body)
-
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		err = json.Unmarshal(b, &e)
-
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		actual = append(actual, e)
-	}
+	actual, handler := generateTestHandler()
 
 	wg.Go(func() { startServer(ctx, handler) })
 
@@ -209,7 +163,25 @@ func TestThreeMessages(t *testing.T) {
 
 	cancel()
 
-	compare(t, expected, actual)
+	compare(t, expected, *actual)
 
 	wg.Wait()
+}
+
+func TestZeroMessages(t *testing.T) {
+	delays := []int{}
+
+	testMessages(t, delays)
+}
+
+func TestOneMessage(t *testing.T) {
+	delays := []int{20}
+
+	testMessages(t, delays)
+}
+
+func TestThreeMessages(t *testing.T) {
+	delays := []int{20, 60, 100}
+
+	testMessages(t, delays)
 }
