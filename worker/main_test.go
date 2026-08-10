@@ -149,3 +149,71 @@ func TestOneMessage(t *testing.T) {
 
 	wg.Wait()
 }
+
+func TestThreeMessages(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	curr := time.Now().Truncate(0)
+
+	expected := generateArray(curr, []int{20, 60, 100})
+
+	actual := make([]queue.UpdateBrightnessEvent, 0)
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		var e queue.UpdateBrightnessEvent
+		var b []byte
+
+		b, err := io.ReadAll(r.Body)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		err = json.Unmarshal(b, &e)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		actual = append(actual, e)
+	}
+
+	var wg sync.WaitGroup
+	wg.Go(func() { startServer(ctx, handler) })
+
+	for i := range expected {
+		e := expected[i]
+		body, err := json.Marshal(e)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		time.Sleep(50 * time.Millisecond)
+
+		http.Post("http://localhost:8080/", "application/json", bytes.NewBuffer(body))
+
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	cancel()
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Error("Contents of expected and actual calls to handler differed.")
+
+		if len(expected) != len(actual) {
+			fmt.Println("Expected:", len(expected), "Got:", len(actual))
+		} else {
+			for i := range len(expected) {
+				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
+			}
+		}
+
+	}
+
+	wg.Wait()
+}
