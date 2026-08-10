@@ -41,12 +41,11 @@ func main() {
 
 	// time.Sleep(100 * time.Millisecond)
 	// cancel()
-	// MVP Project
 
 	// ch := make(chan queue.UpdateBrightnessEvent, 100)
 	// Spin up proccess queue that reads from channel
 
-	// queue.
+	// queue.StartProcessQueue(ctx)
 	// Create handler function that writes to channel
 	// Spin up server with handler function
 }

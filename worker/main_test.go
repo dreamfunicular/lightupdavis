@@ -20,18 +20,42 @@ func generateUpdateBrightnessEvent(t time.Time, i int) (e queue.UpdateBrightness
 	return queue.UpdateBrightnessEvent{
 		Time:   t,
 		BulbNo: 1,
-		Power:  float32(i) * 0.1,
+		Power:  1,
 	}
 }
+func generateArray(start time.Time, delays []int) (q []queue.UpdateBrightnessEvent) {
+	q = make([]queue.UpdateBrightnessEvent, 0)
 
-func generateQueue(curr time.Time, start int, len int) (q []queue.UpdateBrightnessEvent) {
-	for i := start; i < start+len; i++ {
-		newTime := curr.Add(time.Duration(i) * time.Millisecond)
-		new := generateUpdateBrightnessEvent(newTime, i)
-		q = append(q, new)
+	for i := range delays {
+		newTime := start.Add(time.Duration(delays[i]) * time.Millisecond)
+		e := generateUpdateBrightnessEvent(newTime, 1)
+		q = append(q, e)
 	}
 
 	return q
+}
+
+func TestGenerateArray(t *testing.T) {
+	curr := time.Now()
+
+	expected := []queue.UpdateBrightnessEvent{
+		{
+			Time:   curr.Add(20 * time.Millisecond),
+			BulbNo: 1,
+			Power:  1,
+		},
+		{
+			Time:   curr.Add(40 * time.Millisecond),
+			BulbNo: 1,
+			Power:  1,
+		},
+	}
+
+	actual := generateArray(curr, []int{20, 40})
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Error("Actual and expected differed")
+	}
 }
 
 func TestPing(t *testing.T) {
@@ -66,7 +90,7 @@ func TestOneMessage(t *testing.T) {
 
 	curr := time.Now().Truncate(0)
 
-	expected := generateQueue(curr, 40, 1)
+	expected := generateArray(curr, []int{20})
 
 	actual := make([]queue.UpdateBrightnessEvent, 0)
 
