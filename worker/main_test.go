@@ -192,32 +192,34 @@ func TestStartServerThreeMessages(t *testing.T) {
 
 // channelHandler unit tests
 
-func TestOneMessageToHandler(t *testing.T) {
+func testHandlerWithMessages(t *testing.T, delays []int) {
 	ch, handler := channelHandler()
 
 	curr := time.Now()
 
-	expected := generateArray(curr, []int{20})
+	expected := generateArray(curr, delays)
 
-	b, err := json.Marshal(expected[0])
+	for i := range expected {
+		b, err := json.Marshal(expected[i])
 
-	if err != nil {
-		t.Errorf("JSON marshal failure")
+		if err != nil {
+			t.Errorf("JSON marshal failure")
+		}
+
+		r, err := http.NewRequest(
+			"POST",
+			"https://localhost:8080",
+			bytes.NewBuffer(b),
+		)
+
+		if err != nil {
+			t.Errorf("Request creation")
+		}
+
+		w := httptest.NewRecorder()
+
+		handler(w, r)
 	}
-
-	r, err := http.NewRequest(
-		"POST",
-		"https://localhost:8080",
-		bytes.NewBuffer(b),
-	)
-
-	if err != nil {
-		t.Errorf("Request creation")
-	}
-
-	w := httptest.NewRecorder()
-
-	handler(w, r)
 
 	var actual []queue.UpdateBrightnessEvent
 
@@ -227,4 +229,22 @@ func TestOneMessageToHandler(t *testing.T) {
 	}
 
 	compare(t, expected, actual)
+}
+
+func TestHandlerWithZeroMessages(t *testing.T) {
+	delays := []int{0}
+
+	testHandlerWithMessages(t, delays)
+}
+
+func TestHandlerWithOneMessage(t *testing.T) {
+	delays := []int{20}
+
+	testHandlerWithMessages(t, delays)
+}
+
+func TestHandlerWithTwoMessages(t *testing.T) {
+	delays := []int{20, 60}
+
+	testHandlerWithMessages(t, delays)
 }
