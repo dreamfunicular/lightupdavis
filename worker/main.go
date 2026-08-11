@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/dreamfunicular/lightupdavis/worker/queue"
@@ -68,15 +69,24 @@ func makeHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.Res
 	return ch, handler
 }
 
-// func main() {
-// ctx, cancel := context.WithCancel(context.Background())
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
 
-// ch, handler := channelHandler()
+	ch, handler := makeHandler()
 
-// go startServer(ctx, func(w http.ResponseWriter, r *http.Request) { fmt.Println("Received incoming request") })
-// Spin up proccess queue that reads from channel
+	var wg sync.WaitGroup
+	wg.Go(func() { startServer(ctx, handler) })
+	cancel()
+	wg.Wait()
 
-// queue.StartProcessQueue(ctx)
-// Create handler function that writes to channel
-// Spin up server with handler function
-// }
+	select {
+	case e := <-ch:
+		fmt.Println(e)
+	default:
+	}
+	// Spin up proccess queue that reads from channel
+
+	// queue.StartProcessQueue(ctx)
+	// Create handler function that writes to channel
+	// Spin up server with handler function
+}
