@@ -39,7 +39,7 @@ func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *htt
 	}
 }
 
-func channelHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.ResponseWriter, r *http.Request)) {
+func makeHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.ResponseWriter, r *http.Request)) {
 	ch = make(chan queue.UpdateBrightnessEvent, 100)
 
 	handler = func(w http.ResponseWriter, r *http.Request) {

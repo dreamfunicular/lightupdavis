@@ -139,7 +139,7 @@ func TestStartServerPing(t *testing.T) {
 	wg.Wait()
 }
 
-func testStartServerMessages(t *testing.T, delays []int) {
+func testStartServerWithRequests(t *testing.T, delays []int) {
 	ctx, cancel, curr, wg := generateEnv()
 
 	expected := generateArray(curr, delays)
@@ -172,28 +172,28 @@ func testStartServerMessages(t *testing.T, delays []int) {
 	wg.Wait()
 }
 
-func TestStartServerZeroMessages(t *testing.T) {
+func TestStartServerWithZeroRequests(t *testing.T) {
 	delays := []int{}
 
-	testStartServerMessages(t, delays)
+	testStartServerWithRequests(t, delays)
 }
 
 func TestStartServerOneMessage(t *testing.T) {
 	delays := []int{20}
 
-	testStartServerMessages(t, delays)
+	testStartServerWithRequests(t, delays)
 }
 
-func TestStartServerThreeMessages(t *testing.T) {
+func TestStartServerWithThreeRequests(t *testing.T) {
 	delays := []int{20, 60, 100}
 
-	testStartServerMessages(t, delays)
+	testStartServerWithRequests(t, delays)
 }
 
 // channelHandler unit tests
 
-func testHandlerWithMessages(t *testing.T, delays []int) {
-	ch, handler := channelHandler()
+func testHandlerWithRequests(t *testing.T, delays []int) {
+	ch, handler := makeHandler()
 
 	curr := time.Now()
 
@@ -231,20 +231,20 @@ func testHandlerWithMessages(t *testing.T, delays []int) {
 	compare(t, expected, actual)
 }
 
-func TestHandlerWithZeroMessages(t *testing.T) {
+func TestHandlerWithZeroRequests(t *testing.T) {
 	delays := []int{0}
 
-	testHandlerWithMessages(t, delays)
+	testHandlerWithRequests(t, delays)
 }
 
-func TestHandlerWithOneMessage(t *testing.T) {
+func TestHandlerWithOneRequest(t *testing.T) {
 	delays := []int{20}
 
-	testHandlerWithMessages(t, delays)
+	testHandlerWithRequests(t, delays)
 }
 
-func TestHandlerWithTwoMessages(t *testing.T) {
+func TestHandlerWithTwoRequests(t *testing.T) {
 	delays := []int{20, 60}
 
-	testHandlerWithMessages(t, delays)
+	testHandlerWithRequests(t, delays)
 }
