@@ -43,7 +43,7 @@ func channelHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.
 	ch = make(chan queue.UpdateBrightnessEvent, 100)
 
 	handler = func(w http.ResponseWriter, r *http.Request) {
-		var e queue.UpdateBrightnessEvent
+		var arr []queue.UpdateBrightnessEvent
 		var b []byte
 
 		b, err := io.ReadAll(r.Body)
@@ -53,14 +53,16 @@ func channelHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.
 			os.Exit(1)
 		}
 
-		err = json.Unmarshal(b, &e)
+		err = json.Unmarshal(b, &arr)
 
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		ch <- e
+		for i := range arr {
+			ch <- arr[i]
+		}
 	}
 
 	return ch, handler

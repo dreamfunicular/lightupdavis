@@ -200,7 +200,7 @@ func testHandlerWithMessages(t *testing.T, delays []int) {
 	expected := generateArray(curr, delays)
 
 	for i := range expected {
-		b, err := json.Marshal(expected[i])
+		b, err := json.Marshal(expected[i : i+1])
 
 		if err != nil {
 			t.Errorf("JSON marshal failure")
