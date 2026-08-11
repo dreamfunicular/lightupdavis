@@ -47,17 +47,22 @@ func generateEnv() (context.Context, context.CancelFunc, time.Time, *sync.WaitGr
 }
 
 func compare(t *testing.T, expected []queue.UpdateBrightnessEvent, actual []queue.UpdateBrightnessEvent) {
-	if !reflect.DeepEqual(expected, actual) {
-		t.Error("Contents of expected and actual calls to handler differed.")
+	if len(expected) != len(actual) {
+		t.Error("Expected array of:", len(expected), "Got array of:", len(actual))
+	} else {
+		for i := range len(expected) {
+			if expected[i].Time != actual[i].Time {
+				t.Error("Expected and actual time on element", i, "are off by:", expected[i].Time.Sub(actual[i].Time))
+			}
 
-		if len(expected) != len(actual) {
-			fmt.Println("Expected:", len(expected), "Got:", len(actual))
-		} else {
-			for i := range len(expected) {
-				fmt.Println("Expected and actual are off by:", expected[i].Time.Sub(actual[i].Time))
+			if expected[i].BulbNo != actual[i].BulbNo {
+				t.Error("Expected on element", i, "BulbNo", expected[i].BulbNo, "Got:", actual[i].BulbNo)
+			}
+
+			if expected[i].Power != actual[i].Power {
+				t.Error("Expected on element", i, "Power", expected[i].BulbNo, "Got:", actual[i].BulbNo)
 			}
 		}
-
 	}
 }
 
@@ -193,7 +198,7 @@ func TestStartServerWithThreeRequests(t *testing.T) {
 // channelHandler unit tests
 
 func testHandlerWithRequests(t *testing.T, delays []int) {
-	ch, handler := makeHandler()
+	ch, handler := makeHandler(nil)
 
 	curr := time.Now()
 
@@ -247,4 +252,58 @@ func TestHandlerWithTwoRequests(t *testing.T) {
 	delays := []int{20, 60}
 
 	testHandlerWithRequests(t, delays)
+}
+
+// May not properly interface with context cancellation for ListenAndServe. Integration testing will be required.
+func TestHandlerShutoff(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	ch, handler := makeHandler(cancel)
+
+	curr := time.Now()
+
+	shutoffRequest := []queue.UpdateBrightnessEvent{
+		{
+			Time:   curr.Add(20 * time.Millisecond),
+			BulbNo: -1,
+			Power:  1,
+		},
+	}
+
+	b, err := json.Marshal(shutoffRequest)
+
+	if err != nil {
+		t.Errorf("JSON marshal failure")
+	}
+
+	r, err := http.NewRequest(
+		"POST",
+		"https://localhost:8080",
+		bytes.NewBuffer(b),
+	)
+
+	if err != nil {
+		t.Errorf("Request creation")
+	}
+
+	w := httptest.NewRecorder()
+
+	handler(w, r)
+
+	var actual []queue.UpdateBrightnessEvent
+
+	close(ch)
+	for e := range ch {
+		actual = append(actual, e)
+	}
+
+	expected := []queue.UpdateBrightnessEvent{}
+
+	compare(t, expected, actual)
+
+	select {
+	case <-ctx.Done():
+	default:
+		t.Error("Context wasn't cancelled")
+	}
 }

@@ -40,7 +40,7 @@ func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *htt
 	}
 }
 
-func makeHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.ResponseWriter, r *http.Request)) {
+func makeHandler(cancel context.CancelFunc) (ch chan queue.UpdateBrightnessEvent, handler func(w http.ResponseWriter, r *http.Request)) {
 	ch = make(chan queue.UpdateBrightnessEvent, 100)
 
 	handler = func(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +62,15 @@ func makeHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.Res
 		}
 
 		for i := range arr {
-			ch <- arr[i]
+			e := arr[i]
+
+			if e.BulbNo == -1 {
+				cancel()
+				fmt.Println("Bulb was -1, exiting")
+				return
+			}
+
+			ch <- e
 		}
 	}
 
@@ -72,7 +80,7 @@ func makeHandler() (ch chan queue.UpdateBrightnessEvent, handler func(w http.Res
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	ch, handler := makeHandler()
+	ch, handler := makeHandler(cancel)
 
 	var wg sync.WaitGroup
 	wg.Go(func() { startServer(ctx, handler) })
