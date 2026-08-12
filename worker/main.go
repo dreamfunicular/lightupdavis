@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,7 +29,9 @@ func startServer(ctx context.Context, handler func(w http.ResponseWriter, r *htt
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			fmt.Println("Error caused server to fail:", err)
+			if !errors.Is(err, http.ErrServerClosed) {
+				fmt.Println("Error caused server to fail:", err)
+			}
 		}
 	}()
 
@@ -66,7 +69,6 @@ func makeHandler(cancel context.CancelFunc) (ch chan queue.UpdateBrightnessEvent
 
 			if e.BulbNo == -1 {
 				cancel()
-				fmt.Println("Bulb was -1, exiting")
 				return
 			}
 

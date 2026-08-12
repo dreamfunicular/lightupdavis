@@ -46,7 +46,6 @@ func StartProcessQueue(ctx context.Context, handler UpdateBrightnessEventHandler
 				q = append(q, new)
 			}
 		case <-ctx.Done():
-			fmt.Println(i, "loops")
 			return
 		}
 	}
