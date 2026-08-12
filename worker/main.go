@@ -84,7 +84,9 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Go(func() { startServer(ctx, handler) })
-	cancel()
+	wg.Go(func() {
+		queue.StartProcessQueue(ctx, queue.HandleUpdateBrightnessEvent, []queue.UpdateBrightnessEvent{}, ch)
+	})
 	wg.Wait()
 
 	select {
@@ -92,9 +94,4 @@ func main() {
 		fmt.Println(e)
 	default:
 	}
-	// Spin up proccess queue that reads from channel
-
-	// queue.StartProcessQueue(ctx)
-	// Create handler function that writes to channel
-	// Spin up server with handler function
 }
