@@ -14,7 +14,7 @@ type UpdateBrightnessEvent struct {
 	Power  float32
 }
 
-func handleUpdateBrightnessEvent(e UpdateBrightnessEvent) {
+func HandleUpdateBrightnessEvent(e UpdateBrightnessEvent) {
 	fmt.Println(time.Now(), "- Updating bulb", e.BulbNo, "to brightness", e.Power)
 }
 
