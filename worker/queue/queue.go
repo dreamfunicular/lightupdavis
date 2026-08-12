@@ -15,7 +15,7 @@ type UpdateBrightnessEvent struct {
 }
 
 func HandleUpdateBrightnessEvent(e UpdateBrightnessEvent) {
-	fmt.Println(time.Now(), "- Updating bulb", e.BulbNo, "to brightness", e.Power)
+	fmt.Println(time.Now().UnixMilli())
 }
 
 func StartProcessQueue(ctx context.Context, handler UpdateBrightnessEventHandler, q []UpdateBrightnessEvent, ch chan UpdateBrightnessEvent) {
